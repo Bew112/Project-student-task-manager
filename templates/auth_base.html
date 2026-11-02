@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Đăng nhập · Student Task Manager{% endblock %}</title>
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem("studysync-theme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+</head>
+<body class="auth-page">
+  <main class="auth-layout">
+    <section class="auth-main">
+      <button class="theme-toggle auth-theme-toggle" type="button" aria-label="Bật giao diện tối" aria-pressed="false" title="Bật giao diện tối">
+        <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+      </button>
+      <div class="auth-card">
+        <a class="auth-brand" href="{{ url_for('login') }}" aria-label="Student Task Manager">
+          <span class="brand-mark" aria-hidden="true">✓</span>
+          <span>Study<span class="brand-accent">Sync</span></span>
+        </a>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="auth-flash auth-flash-{{ category }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        {% block auth_content %}{% endblock %}
+      </div>
+      <p class="auth-footer">© 2026 StudySync · Quản lý bài tập dễ dàng hơn</p>
+    </section>
+
+    <aside class="auth-art" aria-label="Giới thiệu StudySync">
+      <div class="art-scene" aria-hidden="true">
+        <div class="art-orbit orbit-outer"></div>
+        <div class="art-orbit orbit-inner"></div>
+        <div class="connector connector-one"></div>
+        <div class="connector connector-two"></div>
+        <div class="connector connector-three"></div>
+        <div class="app-node node-calendar">✓</div>
+        <div class="app-node node-book">▤</div>
+        <div class="app-node node-star">★</div>
+        <div class="dashboard">
+          <div class="dashboard-top">
+            <span></span><span></span><span></span>
+            <i></i>
+          </div>
+          <div class="dashboard-heading">
+            <b></b><small></small>
+          </div>
+          <div class="dashboard-task">
+            <span class="task-icon blue">✓</span>
+            <div><b></b><small></small></div>
+            <i class="task-check">✓</i>
+          </div>
+          <div class="dashboard-task">
+            <span class="task-icon orange">▤</span>
+            <div><b></b><small></small></div>
+            <i class="task-check">✓</i>
+          </div>
+          <div class="dashboard-task">
+            <span class="task-icon green">★</span>
+            <div><b></b><small></small></div>
+            <i></i>
+          </div>
+          <div class="dashboard-progress"><span></span></div>
+        </div>
+      </div>
+      <div class="art-caption">
+        <h2>Chinh phục mọi deadline.</h2>
+        <p>Gom bài tập, theo dõi tiến độ và luôn chủ động với lịch học của bạn.</p>
+        <div class="art-dots" aria-hidden="true"><span class="selected"></span><span></span><span></span></div>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

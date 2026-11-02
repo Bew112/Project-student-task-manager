@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}Dashboard học tập · StudySync{% endblock %}
+{% block page_heading %}Dashboard{% endblock %}
+{% block container_class %}personal-container{% endblock %}
+{% block content %}
+<section class="dashboard-welcome">
+  <div>
+    <span class="personal-eyebrow">KHÔNG GIAN HỌC TẬP CỦA BẠN</span>
+    <h1>Chào bạn, {{ current_user.email.split('@')[0] }} 👋</h1>
+    <p>Hôm nay là {{ today.strftime('%d/%m/%Y') }}. Cùng hoàn thành mục tiêu học tập nhé!</p>
+  </div>
+</section>
+
+<section class="personal-stats" aria-label="Thống kê bài tập cá nhân">
+  <article class="personal-stat">
+    <span class="personal-stat-icon today-icon" aria-hidden="true">◷</span>
+    <div><strong>{{ today_count }}</strong><span>Bài tập hôm nay</span></div>
+    <span class="stat-card-mark today-mark" aria-hidden="true">↗</span>
+  </article>
+  <article class="personal-stat">
+    <span class="personal-stat-icon total-icon" aria-hidden="true">▤</span>
+    <div><strong>{{ total }}</strong><span>Tổng bài tập</span></div>
+    <span class="stat-card-mark total-mark" aria-hidden="true">▤</span>
+  </article>
+  <article class="personal-stat">
+    <span class="personal-stat-icon completed-icon" aria-hidden="true">✓</span>
+    <div><strong>{{ done_count }} <small>/ {{ total }}</small></strong><span>Đã hoàn thành</span></div>
+    <span class="stat-card-mark completed-mark" aria-hidden="true">✓</span>
+  </article>
+  <article class="personal-stat">
+    <span class="personal-stat-icon overdue-icon" aria-hidden="true">!</span>
+    <div><strong>{{ overdue_count }}</strong><span>Đang quá hạn</span></div>
+    <span class="stat-card-mark overdue-mark" aria-hidden="true">!</span>
+  </article>
+</section>
+
+<section class="dashboard-grid">
+  <div class="dashboard-main-column">
+    <article class="dashboard-panel daily-panel">
+      <div class="dashboard-panel-heading">
+        <div><span class="panel-kicker">HÔM NAY</span><h2>Bài tập cần hoàn thành</h2></div>
+        <span class="panel-count">{{ today_tasks|length }} bài tập</span>
+      </div>
+      {% if today_tasks %}
+      <ul class="dashboard-task-list">
+        {% for task in today_tasks %}
+        <li class="dashboard-task-row">
+          <form method="post" action="{{ url_for('toggle', task_id=task.id) }}" class="check">
+            <button type="submit" class="checkbox" title="Đánh dấu hoàn thành"></button>
+          </form>
+          <span class="subject-icon subject-icon-{{ loop.index0 % 4 }}" aria-hidden="true">▤</span>
+          <div class="dashboard-task-info">
+            <strong>{{ task.title }}</strong>
+            <span>{% if task.subject %}{{ task.subject }} · {% endif %}Hạn hôm nay</span>
+          </div>
+          <span class="badge warn">Hôm nay</span>
+          <a class="task-edit-link" href="{{ url_for('edit', task_id=task.id) }}" aria-label="Sửa {{ task.title }}">Sửa</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="dashboard-empty">
+        <span aria-hidden="true">✓</span>
+        <div><strong>Hôm nay đang trống!</strong><p>Thêm bài tập mới hoặc tận hưởng ngày học nhẹ nhàng.</p></div>
+        <a href="{{ url_for('add') }}">+ Thêm bài tập</a>
+      </div>
+      {% endif %}
+    </article>
+
+    <article class="dashboard-panel upcoming-panel">
+      <div class="dashboard-panel-heading">
+        <div><span class="panel-kicker">7 NGÀY TỚI</span><h2>Bài tập sắp đến hạn</h2></div>
+        <span class="panel-count">{{ coming_tasks|length }} bài tập</span>
+      </div>
+      {% if coming_tasks %}
+      <ul class="dashboard-task-list">
+        {% for task in coming_tasks %}
+        <li class="dashboard-task-row">
+          <form method="post" action="{{ url_for('toggle', task_id=task.id) }}" class="check">
+            <button type="submit" class="checkbox" title="Đánh dấu hoàn thành"></button>
+          </form>
+          <span class="subject-icon subject-icon-{{ loop.index0 % 4 }}" aria-hidden="true">▤</span>
+          <div class="dashboard-task-info">
+            <strong>{{ task.title }}</strong>
+            <span>{% if task.subject %}{{ task.subject }} · {% endif %}Hạn {{ task.due_date.strftime('%d/%m/%Y') }}</span>
+          </div>
+          <span class="badge {{ 'warn' if task.days_left <= 3 else '' }}">
+            {% if task.days_left == 1 %}Ngày mai{% else %}Còn {{ task.days_left }} ngày{% endif %}
+          </span>
+          <a class="task-edit-link" href="{{ url_for('edit', task_id=task.id) }}" aria-label="Sửa {{ task.title }}">Sửa</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="dashboard-empty compact-empty">
+        <span aria-hidden="true">✓</span>
+        <div><strong>Chưa có bài tập sắp đến hạn</strong><p>Các bài tập mới sẽ xuất hiện ở đây.</p></div>
+      </div>
+      {% endif %}
+    </article>
+
+    <article class="dashboard-panel completion-history-panel">
+      <div class="dashboard-panel-heading">
+        <div><span class="panel-kicker">TIẾN ĐỘ HỌC TẬP</span><h2>Bài hoàn thành mỗi tuần</h2></div>
+        <span class="panel-count">8 tuần gần đây</span>
+      </div>
+      <div class="completion-summary">
+        <div class="completion-rate-ring" role="img" aria-label="Tỷ lệ hoàn thành {{ done_percent|round|int }} phần trăm" style="--completion-rate: {{ done_percent }}%">
+          <span>{{ done_percent|round|int }}%</span>
+        </div>
+        <div class="completion-summary-info">
+          <span>Tỷ lệ hoàn thành</span>
+          <strong>{{ done_count }} / {{ total }} bài tập</strong>
+          <div class="study-progress-track"><span style="width: {{ done_percent }}%"></span></div>
+        </div>
+      </div>
+      <div class="completion-week-chart" role="img" aria-label="Số bài hoàn thành từng tuần trong 8 tuần gần nhất">
+        {% for week in completion_weeks %}
+        {% set bar_height = (week.completed / max_weekly_completed * 100) if max_weekly_completed else 0 %}
+        <div class="completion-week-column" aria-label="{{ week.label }}: {{ week.completed }} bài hoàn thành">
+          <strong class="completion-week-count">{{ week.completed }}</strong>
+          <div class="completion-week-track">
+            {% if week.completed %}
+            <span class="completion-week-bar" style="height: {{ bar_height }}%"></span>
+            {% else %}
+            <span class="completion-week-bar completion-week-bar-empty"></span>
+            {% endif %}
+          </div>
+          <span class="completion-week-label">{{ week.label }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if untracked_done_count %}
+      <p class="completion-note">{{ untracked_done_count }} bài đã hoàn thành từ trước khi bật thống kê tuần nên không có trong biểu đồ.</p>
+      {% else %}
+      <p class="completion-note">Thời điểm hoàn thành được ghi nhận khi bạn đánh dấu bài tập hoàn thành.</p>
+      {% endif %}
+    </article>
+
+    {% if priority_tasks %}
+    <article class="dashboard-panel priority-panel">
+      <div class="dashboard-panel-heading">
+        <div><span class="panel-kicker overdue-kicker">CẦN CHÚ Ý</span><h2>Bài tập quá hạn</h2></div>
+        <span class="panel-count overdue-count">{{ overdue_count }} bài tập</span>
+      </div>
+      <ul class="dashboard-task-list">
+        {% for task in priority_tasks %}
+        {% if task.overdue %}
+        <li class="dashboard-task-row">
+          <form method="post" action="{{ url_for('toggle', task_id=task.id) }}" class="check">
+            <button type="submit" class="checkbox" title="Đánh dấu hoàn thành"></button>
+          </form>
+          <span class="subject-icon overdue-subject-icon" aria-hidden="true">!</span>
+          <div class="dashboard-task-info">
+            <strong>{{ task.title }}</strong>
+            <span>{% if task.subject %}{{ task.subject }} · {% endif %}Hạn {{ task.due_date.strftime('%d/%m/%Y') }}</span>
+          </div>
+          <span class="badge late">Quá {{ -task.days_left }} ngày</span>
+          <a class="task-edit-link" href="{{ url_for('edit', task_id=task.id) }}" aria-label="Sửa {{ task.title }}">Sửa</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+      </ul>
+    </article>
+    {% endif %}
+  </div>
+
+  <aside class="dashboard-side-column">
+    <article class="dashboard-panel calendar-panel" id="calendar">
+      <div class="dashboard-panel-heading">
+        <div><span class="panel-kicker">LỊCH CỦA BẠN</span><h2>Tháng {{ calendar_month }}</h2></div>
+        <span class="calendar-icon" aria-hidden="true">▣</span>
+      </div>
+      <div class="mini-calendar">
+        <div class="calendar-weekdays">
+          <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+        </div>
+        {% for week in calendar_rows %}
+        <div class="calendar-week">
+          {% for day in week %}
+          <span class="calendar-day {{ 'outside-month' if day.outside_month }} {{ 'today' if day.date == today }} {{ 'has-deadline' if day.due_count }}">
+            {{ day.date.day }}
+            {% if day.due_count %}<i aria-label="{{ day.due_count }} bài tập đến hạn"></i>{% endif %}
+          </span>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="calendar-summary">
+        <span class="calendar-summary-dot"></span>
+        <span>{{ upcoming_count }} bài tập chưa hoàn thành sắp tới</span>
+      </div>
+    </article>
+
+    <article class="dashboard-panel weekly-panel">
+      <div class="dashboard-panel-heading">
+        <div><span class="panel-kicker">TIẾN ĐỘ HỌC TẬP</span><h2>Bài tập theo hạn trong tuần</h2></div>
+        <span class="week-total">{{ done_percent|round|int }}%</span>
+      </div>
+      <div class="weekly-chart" role="img" aria-label="Biểu đồ bài tập theo hạn nộp trong 7 ngày tới">
+        {% for day in weekly_due %}
+        {% set day_total = day.count + day.done_count %}
+        {% set bar_height = (day_total / max_weekly_due * 100) if max_weekly_due else 0 %}
+        {% set done_height = (day.done_count / day_total * 100) if day_total else 0 %}
+        <div class="weekly-chart-column" aria-label="{{ day.label }} {{ day.date.strftime('%d/%m') }}: {{ day_total }} bài tập">
+          <span class="weekly-chart-count">{{ day_total if day_total else '' }}</span>
+          <div class="weekly-chart-track">
+            {% if day_total %}
+            <div class="weekly-chart-bar" style="height: {{ bar_height }}%">
+              <span class="weekly-bar-done" style="height: {{ done_height }}%"></span>
+            </div>
+            {% else %}
+            <div class="weekly-chart-bar weekly-chart-bar-empty"></div>
+            {% endif %}
+          </div>
+          <span class="weekly-chart-label">{{ day.label }}</span>
+          <span class="weekly-chart-date">{{ day.date.strftime('%d/%m') }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="weekly-chart-legend">
+        <span><i class="legend-dot pending-dot"></i>Chưa xong</span>
+        <span><i class="legend-dot done-dot"></i>Đã xong</span>
+      </div>
+      <div class="study-progress">
+        <div><span>Tổng tiến độ</span><strong>{{ done_count }} / {{ total }} bài</strong></div>
+        <div class="study-progress-track"><span style="width: {{ done_percent }}%"></span></div>
+      </div>
+    </article>
+
+    <article class="dashboard-panel subject-progress-panel">
+      <div class="dashboard-panel-heading">
+        <div><span class="panel-kicker">PHÂN TÍCH HỌC TẬP</span><h2>Tiến độ theo môn học</h2></div>
+        {% if subject_progress %}<span class="panel-count">{{ subject_progress|length }} môn</span>{% endif %}
+      </div>
+      {% if subject_progress %}
+      <div class="subject-progress-chart" role="list" aria-label="Tiến độ hoàn thành bài tập theo môn học">
+        {% for subject in subject_progress %}
+        <div class="subject-progress-row" role="listitem">
+          <div class="subject-progress-label">
+            <span class="subject-progress-name" title="{{ subject.subject }}">{{ subject.subject }}</span>
+            <span class="subject-progress-count">{{ subject.completed }}/{{ subject.total }}</span>
+          </div>
+          <div
+            class="subject-progress-track"
+            role="img"
+            aria-label="{{ subject.subject }}: hoàn thành {{ subject.completed }} trên {{ subject.total }} bài, {{ subject.percent }} phần trăm"
+          >
+            <span style="width: {{ subject.percent }}%"></span>
+          </div>
+          <strong class="subject-progress-percent">{{ subject.percent }}%</strong>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="subject-progress-legend">
+        <span><i class="legend-dot done-dot"></i>Bài đã hoàn thành</span>
+        <span><i class="legend-dot pending-dot"></i>Bài cần hoàn thành</span>
+      </div>
+      {% else %}
+      <div class="dashboard-empty compact-empty">
+        <span aria-hidden="true">▤</span>
+        <div><strong>Chưa có dữ liệu môn học</strong><p>Thêm bài tập và chọn môn học để theo dõi tiến độ.</p></div>
+      </div>
+      {% endif %}
+    </article>
+  </aside>
+</section>
+
+<section class="all-tasks-section" id="task-list">
+  <div class="all-tasks-heading">
+    <div><span class="panel-kicker">QUẢN LÝ HỌC TẬP</span><h2>Tất cả bài tập</h2></div>
+    <span class="panel-count">{{ tasks|length }} bài tập</span>
+  </div>
+  <nav class="filters" aria-label="Lọc bài tập">
+    <a href="{{ url_for('index', filter='all', q=query_text) }}" class="{{ 'active' if flt == 'all' }}">Tất cả</a>
+    <a href="{{ url_for('index', filter='pending', q=query_text) }}" class="{{ 'active' if flt == 'pending' }}">Chưa xong</a>
+    <a href="{{ url_for('index', filter='done', q=query_text) }}" class="{{ 'active' if flt == 'done' }}">Đã xong</a>
+  </nav>
+
+  {% if tasks %}
+  <ul class="task-list">
+    {% for t in tasks %}
+    <li class="task {{ 'done' if t.done }} {{ 'overdue' if t.overdue }}">
+      <form method="post" action="{{ url_for('toggle', task_id=t.id) }}" class="check">
+        <button type="submit" class="checkbox" title="Đánh dấu hoàn thành">{{ '✓' if t.done else '' }}</button>
+      </form>
+      <div class="info">
+        <h3>{{ t.title }}</h3>
+        <p class="meta">
+          {% if t.subject %}<span class="tag">{{ t.subject }}</span>{% endif %}
+          <span>Hạn: {{ t.due_date.strftime('%d/%m/%Y') }}</span>
+          {% if t.done %}
+            <span class="badge ok">Hoàn thành</span>
+          {% elif t.overdue %}
+            <span class="badge late">Quá hạn {{ -t.days_left }} ngày</span>
+          {% elif t.days_left == 0 %}
+            <span class="badge warn">Hạn hôm nay</span>
+          {% elif t.days_left <= 3 %}
+            <span class="badge warn">Còn {{ t.days_left }} ngày</span>
+          {% else %}
+            <span class="badge">Còn {{ t.days_left }} ngày</span>
+          {% endif %}
+        </p>
+        {% if t.description %}<p class="desc">{{ t.description }}</p>{% endif %}
+      </div>
+      <div class="actions">
+        <a class="btn btn-small" href="{{ url_for('edit', task_id=t.id) }}">Sửa</a>
+        <form method="post" action="{{ url_for('delete', task_id=t.id) }}"
+              onsubmit="return confirm('Xóa bài tập này?');">
+          <button class="btn btn-small btn-danger" type="submit">Xóa</button>
+        </form>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">
+    {% if query_text %}Không tìm thấy bài tập phù hợp với “{{ query_text }}”.{% else %}Chưa có bài tập nào. Bấm “+ Thêm bài tập” để bắt đầu.{% endif %}
+  </p>
+  {% endif %}
+</section>
+{% endblock %}

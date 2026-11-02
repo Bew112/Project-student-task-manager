@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Student Task Manager{% endblock %}</title>
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem("studysync-theme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-icon" aria-hidden="true">✓</span>
+        <span>Study<span class="brand-accent">Sync</span></span>
+      </a>
+      <span class="sidebar-label">KHÔNG GIAN HỌC TẬP</span>
+      <nav class="sidebar-nav" aria-label="Điều hướng chính">
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'index' and request.args.get('filter', 'all') == 'all' }}" href="{{ url_for('index') }}">
+          <span aria-hidden="true">▦</span> Dashboard
+        </a>
+        <a class="sidebar-link" href="{{ url_for('index') }}#task-list">
+          <span aria-hidden="true">☷</span> Bài tập của tôi
+        </a>
+        <a class="sidebar-link" href="{{ url_for('index') }}#calendar">
+          <span aria-hidden="true">▣</span> Lịch bài tập
+        </a>
+        {% if current_user.is_admin %}
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">
+          <span aria-hidden="true">◫</span> Dashboard Admin
+        </a>
+        {% endif %}
+      </nav>
+      <div class="sidebar-account">
+        <span class="account-avatar" aria-hidden="true">{{ current_user.email[0]|upper }}</span>
+        <span class="account-name" title="{{ current_user.email }}">{{ current_user.email }}</span>
+        <form method="post" action="{{ url_for('logout') }}">
+          <button class="logout-button" type="submit" aria-label="Đăng xuất" title="Đăng xuất">↪</button>
+        </form>
+      </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="topbar">
+        <a class="mobile-brand" href="{{ url_for('index') }}">
+          <span class="brand-icon" aria-hidden="true">✓</span> StudySync
+        </a>
+        <span class="topbar-title">{% block page_heading %}{{ 'Dashboard Admin' if request.endpoint == 'admin_dashboard' else 'Dashboard' }}{% endblock %}</span>
+        <div class="topbar-actions">
+          <button class="theme-toggle" type="button" aria-label="Bật giao diện tối" aria-pressed="false" title="Bật giao diện tối">
+            <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+          </button>
+          {% if request.endpoint == 'index' %}
+          <form class="header-search" method="get" action="{{ url_for('index') }}#task-list">
+            {% if request.args.get('filter') %}<input type="hidden" name="filter" value="{{ request.args.get('filter') }}">{% endif %}
+            <label for="task-search" aria-hidden="true">⌕</label>
+            <input id="task-search" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Tìm bài tập..." aria-label="Tìm bài tập">
+          </form>
+          {% endif %}
+          <a class="btn btn-primary header-add" href="{{ url_for('add') }}">+ Thêm bài tập</a>
+          <span class="topbar-avatar" title="{{ current_user.email }}">{{ current_user.email[0]|upper }}</span>
+        </div>
+      </header>
+
+      <main class="container {% block container_class %}{% endblock %}">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="footer">StudySync · Không gian học tập của bạn</footer>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if task else 'Thêm' }} bài tập{% endblock %}
+{% block content %}
+<h2>{{ 'Sửa bài tập' if task else 'Thêm bài tập mới' }}</h2>
+
+<form method="post" class="form">
+  <label>Tiêu đề *
+    <input type="text" name="title" required maxlength="200"
+           value="{{ task.title if task else request.form.get('title', '') }}">
+  </label>
+
+  <label>Môn học
+    <input type="text" name="subject" maxlength="100"
+           value="{{ task.subject if task else request.form.get('subject', '') }}">
+  </label>
+
+  <label>Hạn nộp *
+    <input type="date" name="due_date" required
+           value="{{ task.due_date.isoformat() if task else request.form.get('due_date', '') }}">
+  </label>
+
+  <label>Ghi chú
+    <textarea name="description" rows="4">{{ task.description if task else request.form.get('description', '') }}</textarea>
+  </label>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Lưu</button>
+    <a class="btn" href="{{ url_for('index') }}">Hủy</a>
+  </div>
+</form>
+{% endblock %}

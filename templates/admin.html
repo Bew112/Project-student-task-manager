@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Admin · Student Task Manager{% endblock %}
+{% block container_class %}admin-container{% endblock %}
+{% block content %}
+<div class="admin-heading">
+  <div>
+    <span class="admin-eyebrow">KHU VỰC QUẢN TRỊ</span>
+    <h1>Dashboard Admin</h1>
+    <p>Tổng quan tài khoản và bài tập trên hệ thống.</p>
+  </div>
+  <a class="btn" href="{{ url_for('index') }}">← Về bài tập của tôi</a>
+</div>
+
+<section class="admin-stats" aria-label="Thống kê hệ thống">
+  <article class="admin-stat">
+    <span class="admin-stat-icon users-icon" aria-hidden="true">♙</span>
+    <div><span class="admin-stat-value">{{ total_users }}</span><span class="admin-stat-label">Tài khoản</span></div>
+  </article>
+  <article class="admin-stat">
+    <span class="admin-stat-icon tasks-icon" aria-hidden="true">▤</span>
+    <div><span class="admin-stat-value">{{ total_tasks }}</span><span class="admin-stat-label">Tổng bài tập</span></div>
+  </article>
+  <article class="admin-stat">
+    <span class="admin-stat-icon done-icon" aria-hidden="true">✓</span>
+    <div><span class="admin-stat-value">{{ done_tasks }}</span><span class="admin-stat-label">Đã hoàn thành</span></div>
+  </article>
+  <article class="admin-stat">
+    <span class="admin-stat-icon overdue-icon" aria-hidden="true">!</span>
+    <div><span class="admin-stat-value">{{ overdue_tasks }}</span><span class="admin-stat-label">Quá hạn</span></div>
+  </article>
+</section>
+
+<section class="admin-charts" aria-label="Biểu đồ thống kê">
+  <article class="admin-panel chart-panel">
+    <div class="admin-panel-heading">
+      <div><h2>Tình trạng bài tập</h2><p>Phân loại theo tiến độ và hạn nộp.</p></div>
+    </div>
+    <div class="status-chart-content">
+      {% if total_tasks %}
+      <div
+        class="status-donut"
+        role="img"
+        aria-label="Đã hoàn thành: {{ done_tasks }}; quá hạn: {{ overdue_tasks }}; đang thực hiện: {{ pending_tasks }}"
+        style="--done-stop: {{ done_percent }}%; --overdue-start: {{ done_percent }}%; --overdue-stop: {{ done_percent + overdue_percent }}%; --pending-start: {{ done_percent + overdue_percent }}%;"
+      >
+        <div class="donut-center"><strong>{{ total_tasks }}</strong><span>Bài tập</span></div>
+      </div>
+      {% else %}
+      <div class="status-donut donut-empty" role="img" aria-label="Chưa có bài tập">
+        <div class="donut-center"><strong>0</strong><span>Bài tập</span></div>
+      </div>
+      {% endif %}
+      <ul class="chart-legend">
+        <li><span class="legend-dot done-dot"></span><span>Hoàn thành</span><strong>{{ done_tasks }}</strong></li>
+        <li><span class="legend-dot overdue-dot"></span><span>Quá hạn</span><strong>{{ overdue_tasks }}</strong></li>
+        <li><span class="legend-dot pending-dot"></span><span>Đang thực hiện</span><strong>{{ pending_tasks }}</strong></li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="admin-panel chart-panel">
+    <div class="admin-panel-heading">
+      <div><h2>Bài tập theo tài khoản</h2><p>Tối đa 6 tài khoản có số bài tập cao nhất.</p></div>
+    </div>
+    {% if user_task_counts %}
+    <div class="account-chart">
+      {% for account in user_task_counts %}
+      <div class="account-chart-row">
+        <span class="account-chart-email" title="{{ account.email }}">{{ account.email }}</span>
+        <div
+          class="account-chart-track"
+          role="img"
+          aria-label="{{ account.email }}: {{ account.task_count }} bài tập"
+        >
+          <span style="width: {{ (account.task_count / (user_task_counts[0].task_count or 1) * 100)|round(1) }}%"></span>
+        </div>
+        <strong class="account-chart-value">{{ account.task_count }}</strong>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="admin-empty">Chưa có tài khoản để thống kê.</p>
+    {% endif %}
+  </article>
+</section>
+
+<section class="admin-panel">
+  <div class="admin-panel-heading">
+    <div><h2>Tài khoản gần đây</h2><p>Hiển thị tối đa 10 tài khoản mới nhất.</p></div>
+    <span class="admin-count">{{ total_users }} tài khoản</span>
+  </div>
+  {% if users %}
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>Email</th><th>Vai trò</th><th>ID</th></tr></thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td class="admin-email">{{ user.email }}{% if user.id == current_user.id %}<span class="you-badge">Bạn</span>{% endif %}</td>
+          <td>{% if user.is_admin %}<span class="role-badge admin-role">Admin</span>{% else %}<span class="role-badge">Người dùng</span>{% endif %}</td>
+          <td class="admin-id">#{{ user.id }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="admin-empty">Chưa có tài khoản nào.</p>
+  {% endif %}
+</section>
+
+<section class="admin-panel">
+  <div class="admin-panel-heading">
+    <div><h2>Bài tập gần đây</h2><p>Danh sách bài tập mới nhất từ tất cả tài khoản.</p></div>
+    <span class="admin-count">{{ total_tasks }} bài tập</span>
+  </div>
+  {% if tasks %}
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>Bài tập</th><th>Chủ sở hữu</th><th>Hạn nộp</th><th>Trạng thái</th></tr></thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td class="admin-email">{{ task.title }}{% if task.subject %}<small class="admin-subject">{{ task.subject }}</small>{% endif %}</td>
+          <td>{{ task.user.email if task.user else 'Chưa gán tài khoản' }}</td>
+          <td>{{ task.due_date.strftime('%d/%m/%Y') }}</td>
+          <td>
+            {% if task.done %}<span class="role-badge done-status">Hoàn thành</span>
+            {% elif task.overdue %}<span class="role-badge late-status">Quá hạn</span>
+            {% else %}<span class="role-badge">Đang thực hiện</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="admin-empty">Chưa có bài tập nào trên hệ thống.</p>
+  {% endif %}
+</section>
+{% endblock %}
